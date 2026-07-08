@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Application Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #FCFBF9;
+    --panel: #FFFFFF;
+    --ink: #16181D;
+    --ink-soft: #5B6069;
+    --ink-faint: #8A8F98;
+    --line: #E9E7E2;
+    --line-strong: #DAD7D0;
+
+    --c-all: #1F2430;
+    --c-verification: #3B82F6;
+    --c-rejection: #EF4444;
+    --c-interview: #10B981;
+    --c-assessment: #F97316;
+    --c-reminder: #F59E0B;
+    --c-offer: #8B5CF6;
+    --c-applied: #14B8A6;
+    --c-uncategorized: #9AA0A8;
+
+    --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(20,24,29,.04), 0 8px 24px rgba(20,24,29,.05);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  button:focus-visible, [tabindex]:focus-visible, select:focus-visible, input:focus-visible {
+    outline: 2px solid var(--c-verification);
+    outline-offset: 2px;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px 96px; }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; padding: 22px 0 18px;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand .mark {
+    font-family: var(--font-mono); font-weight: 600; font-size: 15px;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--ink);
+  }
+  .brand .dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--c-interview);
+    display: inline-block; margin: 0 2px; transform: translateY(-1px);
+  }
+  .brand .sub {
+    font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);
+    letter-spacing: .08em; text-transform: uppercase;
+  }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .synced {
+    font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);
+    letter-spacing: .04em; text-align: right; white-space: nowrap;
+  }
+  .btn {
+    border: 1px solid var(--line-strong); background: var(--panel); color: var(--ink);
+    border-radius: 10px; padding: 9px 14px; font-size: 13px; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 8px; transition: .15s;
+  }
+  .btn:hover { border-color: var(--ink); }
+  .btn.primary { background: var(--c-all); color: #fff; border-color: var(--c-all); }
+  .btn.primary:hover { background: #000; }
+  .btn.ghost { border-color: transparent; background: transparent; padding: 9px 10px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn .spin { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.35);
+    border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- Attention band (signature) ---------- */
+  .attention {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 20px 22px; margin: 6px 0 22px;
+    display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center;
+  }
+  .attention .count {
+    font-family: var(--font-mono); font-weight: 600; font-size: 46px; line-height: 1;
+    letter-spacing: -.02em;
+  }
+  .attention .count small {
+    display: block; font-size: 10px; font-weight: 500; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--ink-faint); margin-top: 8px;
+  }
+  .attention .divider { width: 1px; align-self: stretch; background: var(--line); }
+  .attn-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .attn-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--line-strong); border-radius: 999px;
+    padding: 5px 12px 5px 8px; font-size: 12.5px; background: var(--paper);
+    cursor: pointer; transition: .12s;
+  }
+  .attn-pill:hover { border-color: var(--ink); }
+  .attn-pill .tick { width: 6px; height: 6px; border-radius: 50%; }
+  .attn-pill b { font-weight: 500; }
+  .attn-pill span { color: var(--ink-soft); }
+  .attn-empty { color: var(--ink-soft); font-size: 13.5px; }
+  .attn-empty b { color: var(--ink); font-weight: 500; }
+
+  /* ---------- Tabs (chips) ---------- */
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .chip {
+    border: 1px solid; background: transparent; border-radius: 999px;
+    padding: 7px 13px; font-size: 13px; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 7px; transition: .13s;
+    color: var(--chip); border-color: color-mix(in srgb, var(--chip) 42%, transparent);
+  }
+  .chip:hover { background: color-mix(in srgb, var(--chip) 8%, transparent); }
+  .chip .n {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    background: color-mix(in srgb, var(--chip) 14%, transparent);
+    color: var(--chip); border-radius: 999px; padding: 1px 7px; min-width: 20px; text-align: center;
+  }
+  .chip[aria-pressed="true"] { background: var(--chip); color: #fff; border-color: var(--chip); }
+  .chip[aria-pressed="true"] .n { background: rgba(255,255,255,.22); color: #fff; }
+  .chip.all { --chip: var(--c-all); }
+  .chip.verification { --chip: var(--c-verification); }
+  .chip.rejection { --chip: var(--c-rejection); }
+  .chip.interview { --chip: var(--c-interview); }
+  .chip.assessment { --chip: var(--c-assessment); }
+  .chip.reminder { --chip: var(--c-reminder); }
+  .chip.offer { --chip: var(--c-offer); }
+  .chip.applied { --chip: var(--c-applied); }
+  .chip.uncategorized { --chip: var(--c-uncategorized); }
+
+  /* ---------- Board ---------- */
+  .board-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px; gap: 12px;
+  }
+  .board-head h2 {
+    font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); margin: 0;
+  }
+  .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 16px 16px 14px; position: relative;
+    border-left: 3px solid var(--accent, var(--c-uncategorized));
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .card.needs::after {
+    content: ""; position: absolute; top: 14px; right: 14px;
+    width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .company { font-weight: 600; font-size: 15.5px; letter-spacing: -.01em; margin: 0 26px 0 0; }
+  .role { color: var(--ink-soft); font-size: 13px; margin-top: 1px; }
+  .status-badge {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: .08em;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 6px; white-space: nowrap;
+    color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .action {
+    font-size: 13px; color: var(--ink); background: var(--paper);
+    border: 1px solid var(--line); border-radius: 9px; padding: 8px 11px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .action .tick { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
+  .action.closed { color: var(--ink-faint); }
+  .action.closed .tick { background: var(--ink-faint); }
+  .meta {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); letter-spacing: .02em;
+  }
+  .meta .flag { color: var(--c-assessment); }
+  .card-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .mini {
+    font-size: 12px; color: var(--ink-soft); background: transparent;
+    border: 1px solid var(--line); border-radius: 8px; padding: 5px 9px; transition: .12s;
+  }
+  .mini:hover { border-color: var(--ink); color: var(--ink); }
+  select.mini { appearance: none; padding-right: 22px;
+    background-image: url("data:image/svg+xml,%3Csvg width='8' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h8L4 6z' fill='%235B6069'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 8px center; }
+  .history { margin-top: 2px; border-top: 1px dashed var(--line); padding-top: 10px; display: none; }
+  .history.open { display: block; }
+  .history .h-row { font-size: 12px; padding: 5px 0; display: flex; gap: 8px; align-items: baseline; }
+  .history .h-cat {
+    font-family: var(--font-mono); font-size: 9.5px; font-weight: 600; letter-spacing: .06em;
+    text-transform: uppercase; padding: 1px 6px; border-radius: 5px; flex: none;
+  }
+  .history .h-subj { color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .history .h-date { color: var(--ink-faint); font-family: var(--font-mono); font-size: 10.5px; margin-left: auto; flex: none; }
+
+  /* ---------- Empty / states ---------- */
+  .empty {
+    text-align: center; padding: 60px 20px; color: var(--ink-soft);
+    border: 1px dashed var(--line-strong); border-radius: var(--radius); background: var(--panel);
+  }
+  .empty h3 { color: var(--ink); font-size: 17px; margin: 0 0 6px; font-weight: 600; }
+  .empty p { margin: 0 auto 4px; max-width: 420px; font-size: 14px; }
+  .empty code { font-family: var(--font-mono); font-size: 12px; background: var(--paper);
+    border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; }
+
+  /* ---------- Modal (settings / manual add) ---------- */
+  .scrim { position: fixed; inset: 0; background: rgba(20,24,29,.32); display: none;
+    align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+  .scrim.open { display: flex; }
+  .modal { background: var(--panel); border-radius: var(--radius); box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    width: 100%; max-width: 460px; padding: 22px; }
+  .modal h3 { margin: 0 0 4px; font-size: 17px; }
+  .modal p.hint { margin: 0 0 16px; font-size: 13px; color: var(--ink-soft); }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--ink-soft);
+    margin-bottom: 5px; letter-spacing: .01em; }
+  .field input, .field select, .field textarea {
+    width: 100%; border: 1px solid var(--line-strong); border-radius: 9px;
+    padding: 9px 11px; font-size: 13.5px; font-family: inherit; background: var(--paper); color: var(--ink);
+  }
+  .field textarea { resize: vertical; min-height: 60px; font-family: var(--font-mono); font-size: 12px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--c-all); color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px;
+    opacity: 0; transition: .25s; z-index: 60; box-shadow: 0 8px 24px rgba(0,0,0,.2); pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 560px) {
+    .attention { grid-template-columns: 1fr; gap: 14px; }
+    .attention .divider { display: none; }
+    .board { grid-template-columns: 1fr; }
+    .synced { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark">Applic<span class="dot"></span>tion Tracker</span>
+      <span class="sub" id="brandCount"></span>
+    </div>
+    <div class="topbar-right">
+      <div class="synced" id="synced">Not synced yet</div>
+      <button class="btn ghost" id="settingsBtn" title="Settings" aria-label="Settings">⚙</button>
+      <button class="btn primary" id="syncBtn" style="display:none">↻ Sync now</button>
+      <button class="btn primary" id="connectBtn">Connect Gmail</button>
+    </div>
+  </header>
+
+  <section class="attention" id="attention" hidden>
+    <div class="count" id="attnCount">0<small>Need action</small></div>
+    <div class="divider"></div>
+    <div class="attn-list" id="attnList"></div>
+  </section>
+
+  <nav class="tabs" id="tabs"></nav>
+
+  <div class="board-head">
+    <h2 id="boardTitle">All applications</h2>
+    <button class="mini" id="addBtn">+ Add manually</button>
+  </div>
+  <div id="boardArea"></div>
+</div>
+
+<!-- Settings modal -->
+<div class="scrim" id="settingsScrim">
+  <div class="modal">
+    <h3>Settings</h3>
+    <p class="hint">Everything stays in this browser. Nothing is sent anywhere except read-only requests to Gmail.</p>
+    <div class="field">
+      <label for="clientIdInput">Google OAuth Client ID</label>
+      <input id="clientIdInput" placeholder="xxxxxxxx.apps.googleusercontent.com" />
+    </div>
+    <div class="field">
+      <label for="windowInput">Scan mail from the last</label>
+      <select id="windowInput">
+        <option value="30">30 days</option>
+        <option value="60">60 days</option>
+        <option value="90">90 days</option>
+        <option value="180">180 days</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="queryInput">Gmail search filter (advanced)</label>
+      <textarea id="queryInput"></textarea>
+    </div>
+    <div class="field" style="display:flex;align-items:flex-start;gap:9px">
+      <input type="checkbox" id="autoSyncInput" style="width:auto;margin-top:2px" />
+      <label for="autoSyncInput" style="margin:0;font-weight:400;color:var(--ink)">
+        Auto-sync every 5 minutes while this tab is open
+        <span style="display:block;color:var(--ink-faint);font-size:11.5px;margin-top:2px">Only runs when connected. You may re-approve Google roughly hourly.</span>
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="resetBtn" style="margin-right:auto;color:var(--c-rejection)">Clear all data</button>
+      <button class="btn" id="settingsCancel">Cancel</button>
+      <button class="btn primary" id="settingsSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manual add modal -->
+<div class="scrim" id="addScrim">
+  <div class="modal">
+    <h3>Add an application</h3>
+    <p class="hint">For anything the scan missed — applied on a portal, referral, etc.</p>
+    <div class="field"><label for="mCompany">Company</label><input id="mCompany" placeholder="e.g. Stripe" /></div>
+    <div class="field"><label for="mRole">Role</label><input id="mRole" placeholder="e.g. Software Engineer Intern" /></div>
+    <div class="field">
+      <label for="mStatus">Status</label>
+      <select id="mStatus">
+        <option value="applied">Applied</option>
+        <option value="verification">Verification</option>
+        <option value="assessment">Assessment</option>
+        <option value="interview">Interview</option>
+        <option value="reminder">Reminder</option>
+        <option value="offer">Offer</option>
+        <option value="rejection">Rejection</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="addCancel">Cancel</button>
+      <button class="btn primary" id="addSave">Add</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+"use strict";
+
+/* ============================================================
+   CONFIG — set your Google OAuth Client ID here, or in Settings.
+   ============================================================ */
+const CONFIG = {
+  CLIENT_ID: "",  // e.g. "1234-abcd.apps.googleusercontent.com"
+  SCOPE: "https://www.googleapis.com/auth/gmail.readonly",
+  MAX_MESSAGES: 250,
+  CONCURRENCY: 6,
+};
+
+const DEFAULT_QUERY =
+  '{"thank you for applying" "your application" "application received" ' +
+  '"we received your application" "next steps" interview assessment ' +
+  '"coding challenge" "online assessment" recruiter "phone screen" ' +
+  'offer "moving forward" unfortunately "not moving forward" "hiring team" ' +
+  '"verify your email" reminder}';
+
+const STORE_KEY = "apptracker.v1";
+const CATEGORIES = ["verification","rejection","interview","assessment","reminder","offer","applied"];
+const CAT_LABEL = {
+  all:"All", verification:"Verification", rejection:"Rejection", interview:"Interview",
+  assessment:"Assessment", reminder:"Reminder", offer:"Offer", applied:"Applied", uncategorized:"Uncategorized"
+};
+const CAT_COLOR = {
+  all:"var(--c-all)", verification:"var(--c-verification)", rejection:"var(--c-rejection)",
+  interview:"var(--c-interview)", assessment:"var(--c-assessment)", reminder:"var(--c-reminder)",
+  offer:"var(--c-offer)", applied:"var(--c-applied)", uncategorized:"var(--c-uncategorized)"
+};
+// Statuses that need the user to do something.
+const ACTION_STATES = new Set(["verification","assessment","interview","reminder","offer"]);
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let state = loadState();
+let tokenClient = null;
+let accessToken = null;
+let tokenExpiry = 0;         // ms epoch when the current access token stops being valid
+let connectedOnce = false;   // have we successfully authed at least once this session?
+let isSyncing = false;       // a sync (or auth) is in flight
+let activeTab = "all";
+const AUTO_SYNC_MS = 5 * 60 * 1000;
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s.autoSync === undefined) s.autoSync = true; // default on for older saves
+      return s;
+    }
+  } catch (e) {}
+  return { clientId:"", window:"60", query:DEFAULT_QUERY, lastSync:0, groups:{}, dismissed:{}, autoSync:true };
+}
+function tokenValid() { return !!accessToken && Date.now() < tokenExpiry - 120000; }
+function saveState() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+/* ============================================================
+   CLASSIFIER — weighted keyword scoring over subject + snippet
+   ============================================================ */
+const SIGNALS = {
+  offer: [
+    [/pleased to offer|delighted to offer/i, 6], [/offer letter|job offer|your offer/i, 5],
+    [/we'?d like to (extend|offer)|extend(ing)? an offer/i, 5], [/welcome to the team/i, 4],
+    [/congratulations/i, 2],
+  ],
+  rejection: [
+    [/regret to inform|we regret/i, 6], [/not (be )?(moving|proceeding) forward|will not be proceeding/i, 6],
+    [/decided to (move forward|proceed) with other|other candidates/i, 5],
+    [/not (be )?selected|position has been filled|no longer under consideration/i, 5],
+    [/unfortunately/i, 3], [/wish you (the best|success|luck)/i, 1],
+  ],
+  interview: [
+    [/interview/i, 4], [/phone screen|technical screen|hiring manager (call|screen)/i, 4],
+    [/schedule (a|your|some) (call|time|interview|conversation)|book a time|find a time/i, 4],
+    [/(invite|inviting) you to|meet (with )?the team|on[- ]?site/i, 4],
+    [/calendly|availability|your availability/i, 2],
+  ],
+  assessment: [
+    [/assessment|coding (challenge|test|assessment)|online assessment|take[- ]home/i, 5],
+    [/hackerrank|codesignal|codility|hackerearth|coderpad|karat/i, 5],
+    [/technical (challenge|exercise)|complete the (test|challenge)/i, 4], [/\bOA\b/, 3],
+  ],
+  reminder: [
+    [/reminder|don'?t forget|last chance|final reminder/i, 4],
+    [/expires? (soon|in|on|today)|deadline|due (by|soon|today)/i, 4],
+    [/action required|complete your|pending (action|task)|awaiting your/i, 3],
+  ],
+  verification: [
+    [/verify your email|confirm your (email|account)|email verification/i, 6],
+    [/verification code|activate your account|confirm your (identity|address)/i, 5],
+  ],
+  applied: [
+    [/thank you for applying|thanks for applying/i, 6],
+    [/we(’|'|)ve received your application|application (received|submitted|confirmation)/i, 5],
+    [/your application (to|for|has been received)|successfully applied/i, 5],
+    [/received your interest|application is (being|under) review/i, 3],
+  ],
+};
+const PRECEDENCE = ["offer","rejection","interview","assessment","reminder","verification","applied"];
+
+function classify(text) {
+  const scores = {};
+  let best = "uncategorized", bestScore = 0;
+  for (const cat of PRECEDENCE) {
+    let s = 0;
+    for (const [re, w] of SIGNALS[cat]) if (re.test(text)) s += w;
+    scores[cat] = s;
+    if (s > bestScore) { bestScore = s; best = cat; }
+  }
+  // tie-break already handled by PRECEDENCE order (first max wins)
+  return { category: best, score: bestScore, low: bestScore > 0 && bestScore < 4 };
+}
+
+/* ============================================================
+   COMPANY / ROLE EXTRACTION
+   ============================================================ */
+const ATS_DOMAINS = ["greenhouse.io","lever.co","myworkday.com","workday.com","ashbyhq.com",
+  "icims.com","smartrecruiters.com","workable.com","bamboohr.com","jobvite.com","taleo.net",
+  "breezy.hr","successfactors.com","hire.google.com","paylocity.com","dover.com","gem.com",
+  "notion.so","ripplematch.com","indeed.com","linkedin.com","ziprecruiter.com"];
+
+function parseFrom(from) {
+  const m = from.match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>/) || from.match(/^\s*([^<]+)$/);
+  const name = m ? (m[1] || "").trim() : "";
+  const email = m && m[2] ? m[2].trim() : (from.includes("@") ? from.trim() : "");
+  const domain = email.includes("@") ? email.split("@")[1].toLowerCase() : "";
+  return { name, email, domain };
+}
+
+function titleCase(s) {
+  return s.replace(/\s+/g, " ").trim()
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function extractCompany(from, subject) {
+  const { name, domain } = parseFrom(from);
+  // 1. Subject: "application to/for/at <Company>"
+  let m = subject.match(/application (?:to|for|at)\s+([A-Z][\w&.,'’\- ]{1,40}?)(?:[.!?]|\s+(?:for|team|has|is|was|—|-)|$)/);
+  if (m) return titleCase(m[1]);
+  // 2. Display name "Company via Greenhouse" / "Company Careers"
+  if (name) {
+    let n = name.replace(/\s+via\s+.*/i, "")
+                .replace(/\b(careers|recruiting|recruitment|talent|hiring|team|no[- ]?reply|jobs|hr)\b/gi, "")
+                .replace(/[|•·].*$/, "").trim();
+    if (n && !/^\W*$/.test(n) && n.length > 1 && !/^(the )?team$/i.test(n)) return titleCase(n);
+  }
+  // 3. Non-ATS domain → second-level label
+  if (domain && !ATS_DOMAINS.some(d => domain.endsWith(d))) {
+    const parts = domain.replace(/^(mail|email|no-?reply|jobs|careers|talent|notifications?)\./, "").split(".");
+    if (parts.length >= 2) return titleCase(parts[parts.length - 2]);
+  }
+  // 4. Fallback: display name raw, else domain
+  if (name) return titleCase(name.replace(/\s+via\s+.*/i, ""));
+  return domain ? titleCase(domain.split(".")[0]) : "Unknown";
+}
+
+function extractRole(subject) {
+  let m = subject.match(/(?:for|the|as an?|:)\s+([A-Z][A-Za-z0-9\/\+\-\.]*(?:\s+[A-Za-z0-9\/\+\-\.]+){0,4}?\s+(?:Intern(?:ship)?|Engineer|Developer|Analyst|Manager|Designer|Scientist|Co[- ]?op))\b/);
+  if (m) return titleCase(m[1]);
+  m = subject.match(/\b([A-Z][A-Za-z]+(?:\s+[A-Za-z]+){0,3}\s+(?:Intern(?:ship)?|Engineer|Developer|Analyst|Co[- ]?op))\b/);
+  if (m) return titleCase(m[1]);
+  return "";
+}
+
+function norm(s) { return (s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
+function groupKey(company, role) {
+  return norm(company) + "|" + norm(role);
+}
+
+/* ============================================================
+   STATUS RESOLUTION per group
+   ============================================================ */
+function resolveStatus(group) {
+  if (group.override) return group.override;
+  if (group.manual) return group.status || "applied";
+  const emails = (group.emails || []).slice().sort((a,b) => a.date - b.date);
+  if (!emails.length) return group.status || "uncategorized";
+  const meaningful = emails.filter(e => e.category !== "uncategorized");
+  if (!meaningful.length) return "uncategorized";
+
+  const hasOffer = meaningful.some(e => e.category === "offer");
+  if (hasOffer) return "offer";
+
+  const latest = meaningful[meaningful.length - 1];
+  // A rejection stays terminal unless a later interview/assessment/offer arrives.
+  const rej = meaningful.filter(e => e.category === "rejection").pop();
+  if (rej) {
+    const laterActive = meaningful.some(e => e.date > rej.date &&
+      ["interview","assessment","offer"].includes(e.category));
+    if (!laterActive) return "rejection";
+  }
+  return latest.category;
+}
+
+function lastDate(group) {
+  if (group.manual && (!group.emails || !group.emails.length)) return group.addedAt || 0;
+  const emails = group.emails || [];
+  return emails.reduce((m,e) => Math.max(m, e.date), group.addedAt || 0);
+}
+
+function nextAction(status, group) {
+  const days = Math.floor((Date.now() - lastDate(group)) / 86400000);
+  switch (status) {
+    case "offer": return { text: "Review the offer", closed: false };
+    case "interview": return { text: "Prep & confirm the interview", closed: false };
+    case "assessment": return { text: "Complete the assessment", closed: false };
+    case "reminder": return { text: "Action needed — reminder", closed: false };
+    case "verification": return { text: "Verify your email", closed: false };
+    case "rejection": return { text: "Closed", closed: true };
+    case "applied":
+      return days >= 10
+        ? { text: `Follow up — no reply in ${days} days`, closed: false }
+        : { text: `Waiting on a response (${days}d)`, closed: false };
+    default: return { text: "Review this one", closed: false };
+  }
+}
+
+/* ============================================================
+   GMAIL OAUTH + FETCH
+   ============================================================ */
+function getClientId() { return state.clientId || CONFIG.CLIENT_ID; }
+
+function initTokenClient() {
+  if (!window.google || !google.accounts || !google.accounts.oauth2) return false;
+  const cid = getClientId();
+  if (!cid) return false;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: cid,
+    scope: CONFIG.SCOPE,
+    callback: (resp) => {
+      if (resp && resp.access_token) {
+        accessToken = resp.access_token;
+        tokenExpiry = Date.now() + ((parseInt(resp.expires_in, 10) || 3600) * 1000);
+        connectedOnce = true;
+        runSync();
+      } else {
+        setSyncing(false);
+        if (resp && resp.error && resp.error !== "") toast("Sign-in was cancelled");
+      }
+    },
+  });
+  return true;
+}
+
+function requestToken() {
+  if (!getClientId()) { openSettings(); toast("Add your Google Client ID first"); return; }
+  if (!tokenClient && !initTokenClient()) { toast("Google sign-in is still loading — try again"); return; }
+  setSyncing(true, "Connecting…");
+  tokenClient.requestAccessToken({ prompt: connectedOnce ? "" : "consent" });
+}
+
+// Manual "Sync now": reuse the live token if it's still valid, else re-auth then sync.
+function syncNow() {
+  if (isSyncing) return;
+  if (tokenValid()) runSync();
+  else requestToken();
+}
+
+// Fires every 5 min while the tab is open. Silent when possible; never nags.
+function autoTick() {
+  if (!state.autoSync || isSyncing) return;
+  if (tokenValid()) { runSync(); return; }
+  // token expired but we've authed before → attempt a silent renewal, then it syncs
+  if (connectedOnce && tokenClient) {
+    try { tokenClient.requestAccessToken({ prompt: "" }); } catch (e) {}
+  }
+  // if never connected this session, do nothing — wait for a manual Connect
+}
+
+async function gmail(path) {
+  const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/" + path, {
+    headers: { Authorization: "Bearer " + accessToken },
+  });
+  if (res.status === 401) { accessToken = null; throw new Error("AUTH"); }
+  if (!res.ok) throw new Error("Gmail API " + res.status);
+  return res.json();
+}
+
+function buildQuery() {
+  const win = state.window || "60";
+  const base = (state.query && state.query.trim()) || DEFAULT_QUERY;
+  const after = state.lastSync ? ` after:${Math.floor(state.lastSync/1000)}` : ` newer_than:${win}d`;
+  return base + after;
+}
+
+async function listMessageIds(q) {
+  let ids = [], pageToken = "";
+  do {
+    const data = await gmail(`messages?q=${encodeURIComponent(q)}&maxResults=100` +
+      (pageToken ? `&pageToken=${pageToken}` : ""));
+    (data.messages || []).forEach(m => ids.push(m.id));
+    pageToken = data.nextPageToken || "";
+  } while (pageToken && ids.length < CONFIG.MAX_MESSAGES);
+  return ids.slice(0, CONFIG.MAX_MESSAGES);
+}
+
+async function fetchMessage(id) {
+  const data = await gmail(`messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`);
+  const h = {};
+  (data.payload && data.payload.headers || []).forEach(x => h[x.name.toLowerCase()] = x.value);
+  return {
+    id,
+    from: h.from || "",
+    subject: h.subject || "(no subject)",
+    snippet: (data.snippet || "").replace(/&#39;/g,"'").replace(/&amp;/g,"&").replace(/&quot;/g,'"'),
+    date: parseInt(data.internalDate || "0", 10),
+  };
+}
+
+async function pool(items, worker, size, onProgress) {
+  let i = 0, done = 0;
+  const results = [];
+  async function next() {
+    while (i < items.length) {
+      const idx = i++;
+      try { results[idx] = await worker(items[idx]); } catch (e) { results[idx] = null; }
+      done++; if (onProgress) onProgress(done, items.length);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(size, items.length) }, next));
+  return results.filter(Boolean);
+}
+
+async function runSync() {
+  try {
+    setSyncing(true, "Fetching…");
+    const q = buildQuery();
+    const ids = await listMessageIds(q);
+    if (!ids.length) {
+      state.lastSync = Date.now(); saveState();
+      setSyncing(false); render(); toast("Up to date"); return;
+    }
+    const msgs = await pool(ids, fetchMessage, CONFIG.CONCURRENCY,
+      (d, t) => setSyncing(true, `Reading ${d}/${t}…`));
+
+    let added = 0;
+    for (const m of msgs) {
+      const c = classify(m.subject + " \n " + m.snippet + " \n " + m.from);
+      const company = extractCompany(m.from, m.subject);
+      const role = extractRole(m.subject);
+      const key = groupKey(company, role);
+      if (state.dismissed[key]) continue;
+
+      if (!state.groups[key]) state.groups[key] = { company, role, emails: [], override: null };
+      const g = state.groups[key];
+      if (!g.emails.some(e => e.id === m.id)) {
+        g.emails.push({ id: m.id, subject: m.subject, snippet: m.snippet, from: m.from, date: m.date, category: c.category, low: c.low });
+        added++;
+      }
+      // keep the nicest company/role we've seen
+      if (role && !g.role) g.role = role;
+      if (company && (g.company === "Unknown" || !g.company)) g.company = company;
+    }
+
+    state.lastSync = Date.now();
+    saveState(); setSyncing(false); render();
+    toast(added ? `Synced — ${added} new email${added>1?"s":""}` : "Up to date");
+  } catch (e) {
+    setSyncing(false);
+    if (e.message === "AUTH") { accessToken = null; toast("Session expired — reconnect"); }
+    else toast("Sync failed: " + e.message);
+  }
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function activeGroups() {
+  return Object.entries(state.groups)
+    .filter(([k]) => !state.dismissed[k])
+    .map(([k, g]) => ({ key: k, ...g, status: resolveStatus(g), last: lastDate(g) }));
+}
+
+function counts(groups) {
+  const c = { all: groups.length };
+  CATEGORIES.forEach(cat => c[cat] = 0);
+  c.uncategorized = 0;
+  groups.forEach(g => { c[g.status] = (c[g.status] || 0) + 1; });
+  return c;
+}
+
+function fmtDate(ms) {
+  if (!ms) return "—";
+  const d = new Date(ms), now = new Date();
+  const days = Math.floor((now - d) / 86400000);
+  if (days === 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 7) return days + "d ago";
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function render() {
+  const groups = activeGroups();
+  const c = counts(groups);
+
+  // brand count + synced + top-bar buttons
+  document.getElementById("brandCount").textContent = groups.length ? `${groups.length} tracked` : "";
+  updateControls();
+
+  // attention band
+  const needs = groups.filter(g => {
+    if (g.status === "applied") { const days = Math.floor((Date.now()-g.last)/86400000); return days >= 10; }
+    return ACTION_STATES.has(g.status);
+  }).sort((a,b) => actionRank(a.status) - actionRank(b.status));
+  const attn = document.getElementById("attention");
+  if (groups.length) {
+    attn.hidden = false;
+    document.getElementById("attnCount").innerHTML = `${needs.length}<small>Need action</small>`;
+    const list = document.getElementById("attnList");
+    if (!needs.length) {
+      list.innerHTML = `<div class="attn-empty"><b>All clear.</b> Nothing waiting on you right now.</div>`;
+    } else {
+      list.innerHTML = needs.slice(0, 8).map(g => {
+        const col = CAT_COLOR[g.status];
+        return `<button class="attn-pill" data-key="${g.key}">
+          <span class="tick" style="background:${col}"></span>
+          <b>${esc(g.company)}</b><span>· ${CAT_LABEL[g.status]}</span></button>`;
+      }).join("");
+      list.querySelectorAll(".attn-pill").forEach(el =>
+        el.onclick = () => { activeTab = "all"; render(); scrollToCard(el.dataset.key); });
+    }
+  } else {
+    attn.hidden = true;
+  }
+
+  // tabs
+  const tabs = document.getElementById("tabs");
+  const order = ["all", ...CATEGORIES];
+  if (c.uncategorized) order.push("uncategorized");
+  tabs.innerHTML = order.map(cat => `
+    <button class="chip ${cat}" aria-pressed="${activeTab===cat}" data-cat="${cat}">
+      ${CAT_LABEL[cat]} <span class="n">${c[cat] || 0}</span></button>`).join("");
+  tabs.querySelectorAll(".chip").forEach(el =>
+    el.onclick = () => { activeTab = el.dataset.cat; render(); });
+
+  document.getElementById("boardTitle").textContent =
+    activeTab === "all" ? "All applications" : CAT_LABEL[activeTab];
+
+  // board
+  const area = document.getElementById("boardArea");
+  const shown = groups
+    .filter(g => activeTab === "all" ? true : g.status === activeTab)
+    .sort((a,b) => {
+      const ra = a.status === "rejection" ? 1 : 0, rb = b.status === "rejection" ? 1 : 0;
+      if (ra !== rb) return ra - rb;
+      return b.last - a.last;
+    });
+
+  if (!groups.length) {
+    area.innerHTML = emptyState();
+    return;
+  }
+  if (!shown.length) {
+    area.innerHTML = `<div class="empty"><h3>Nothing here yet</h3><p>No applications in ${CAT_LABEL[activeTab]}.</p></div>`;
+    return;
+  }
+  area.innerHTML = `<div class="board">${shown.map(cardHTML).join("")}</div>`;
+  wireCards();
+}
+
+function actionRank(status) {
+  return { offer:0, interview:1, assessment:2, reminder:3, verification:4, applied:5 }[status] ?? 9;
+}
+
+function cardHTML(g) {
+  const col = CAT_COLOR[g.status];
+  const act = nextAction(g.status, g);
+  const needsCls = ACTION_STATES.has(g.status) ? "needs" : "";
+  const emails = (g.emails || []).slice().sort((a,b) => b.date - a.date);
+  const lowFlag = emails.some(e => e.low) ? `<span class="flag">· check</span>` : "";
+  const roleLine = g.role ? `<div class="role">${esc(g.role)}</div>` : `<div class="role" style="color:var(--ink-faint)">role not detected</div>`;
+
+  const options = CATEGORIES.map(cat =>
+    `<option value="${cat}" ${g.status===cat?"selected":""}>${CAT_LABEL[cat]}</option>`).join("") +
+    (g.status==="uncategorized"?`<option value="uncategorized" selected>Uncategorized</option>`:"");
+
+  const hist = emails.length ? `<div class="history" id="h-${cssId(g.key)}">
+    ${emails.map(e => `<div class="h-row">
+      <span class="h-cat" style="color:${CAT_COLOR[e.category]};background:color-mix(in srgb, ${CAT_COLOR[e.category]} 13%, transparent)">${CAT_LABEL[e.category]||"—"}</span>
+      <span class="h-subj" title="${esc(e.subject)}">${esc(e.subject)}</span>
+      <span class="h-date">${fmtDate(e.date)}</span></div>`).join("")}
+  </div>` : "";
+
+  return `<div class="card ${needsCls}" style="--accent:${col}" id="card-${cssId(g.key)}">
+    <div class="card-top">
+      <div><h3 class="company">${esc(g.company)}</h3>${roleLine}</div>
+      <span class="status-badge">${CAT_LABEL[g.status]}</span>
+    </div>
+    <div class="action ${act.closed?"closed":""}"><span class="tick"></span>${esc(act.text)}</div>
+    <div class="meta">
+      <span>${emails.length?`${emails.length} email${emails.length>1?"s":""} · `:""}last ${fmtDate(g.last)} ${lowFlag}</span>
+    </div>
+    <div class="card-actions">
+      <select class="mini set-status" data-key="${g.key}" title="Correct the status">${options}</select>
+      ${emails.length?`<button class="mini toggle-hist" data-key="${g.key}">History</button>`:""}
+      <button class="mini remove" data-key="${g.key}" title="Remove" style="margin-left:auto">Remove</button>
+    </div>
+    ${hist}
+  </div>`;
+}
+
+function wireCards() {
+  document.querySelectorAll(".set-status").forEach(el => el.onchange = () => {
+    const g = state.groups[el.dataset.key];
+    if (g) { g.override = el.value; saveState(); render(); toast("Status updated"); }
+  });
+  document.querySelectorAll(".toggle-hist").forEach(el => el.onclick = () => {
+    const h = document.getElementById("h-" + cssId(el.dataset.key));
+    if (h) h.classList.toggle("open");
+  });
+  document.querySelectorAll(".remove").forEach(el => el.onclick = () => {
+    const key = el.dataset.key;
+    state.dismissed[key] = true; delete state.groups[key];
+    saveState(); render(); toast("Removed");
+  });
+}
+
+function scrollToCard(key) {
+  const el = document.getElementById("card-" + cssId(key));
+  if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.animate([{ boxShadow:"0 0 0 3px var(--accent)" },{ boxShadow:"var(--shadow)" }], { duration: 1200 }); }
+}
+
+function emptyState() {
+  const ready = !!getClientId();
+  return `<div class="empty">
+    <h3>${ready ? "Connect Gmail to fill your board" : "One quick setup step"}</h3>
+    ${ready
+      ? `<p>Hit <b>Connect Gmail</b> up top. Your job emails get sorted into the tabs above, grouped by company so each application is one card at its latest stage.</p>`
+      : `<p>Add your Google OAuth Client ID in <b>Settings</b> (⚙) — see the README for the 15-minute Google Cloud setup — then connect Gmail.</p>`}
+    <p style="margin-top:10px">You can also <b>+ Add manually</b> for anything applied through a portal.</p>
+  </div>`;
+}
+
+/* ============================================================
+   UI HELPERS
+   ============================================================ */
+function esc(s) { return (s||"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function cssId(s) { return s.replace(/[^a-z0-9]/gi, "_"); }
+
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+function setSyncing(busy, label) {
+  isSyncing = busy;
+  updateControls(label);
+}
+
+// Shows the Sync button when connected, the Connect button otherwise; puts the
+// spinner on whichever one is active during a sync.
+function updateControls(busyLabel) {
+  const valid = tokenValid();
+  const connectBtn = document.getElementById("connectBtn");
+  const syncBtn = document.getElementById("syncBtn");
+  const spin = `<span class="spin"></span>${esc(busyLabel || "Working…")}`;
+  if (isSyncing) {
+    if (valid) {
+      syncBtn.style.display = ""; syncBtn.disabled = true; syncBtn.innerHTML = spin;
+      connectBtn.style.display = "none";
+    } else {
+      connectBtn.style.display = ""; connectBtn.disabled = true; connectBtn.innerHTML = spin;
+      syncBtn.style.display = "none";
+    }
+  } else if (valid) {
+    syncBtn.style.display = ""; syncBtn.disabled = false; syncBtn.innerHTML = "↻ Sync now";
+    connectBtn.style.display = "none";
+  } else {
+    connectBtn.style.display = ""; connectBtn.disabled = false;
+    connectBtn.textContent = (connectedOnce || state.lastSync) ? "Reconnect & sync" : "Connect Gmail";
+    syncBtn.style.display = "none";
+  }
+  updateSyncedLabel();
+}
+
+function updateSyncedLabel() {
+  const el = document.getElementById("synced");
+  if (!el) return;
+  if (!state.lastSync) { el.textContent = getClientId() ? "Not synced yet" : "Setup needed — open ⚙"; return; }
+  el.textContent = "Synced " + fmtAgo(state.lastSync) + (state.autoSync !== false ? " · auto every 5m" : "");
+}
+
+function fmtAgo(ms) {
+  if (!ms) return "";
+  const s = Math.floor((Date.now() - ms) / 1000);
+  if (s < 45) return "just now";
+  if (s < 90) return "1m ago";
+  const m = Math.floor(s / 60);
+  if (m < 60) return m + "m ago";
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + "h ago";
+  return Math.floor(h / 24) + "d ago";
+}
+
+/* Settings modal */
+function openSettings() {
+  document.getElementById("clientIdInput").value = state.clientId || CONFIG.CLIENT_ID || "";
+  document.getElementById("windowInput").value = state.window || "60";
+  document.getElementById("queryInput").value = state.query || DEFAULT_QUERY;
+  document.getElementById("autoSyncInput").checked = state.autoSync !== false;
+  document.getElementById("settingsScrim").classList.add("open");
+}
+function closeSettings() { document.getElementById("settingsScrim").classList.remove("open"); }
+
+/* ============================================================
+   EVENTS
+   ============================================================ */
+document.getElementById("connectBtn").onclick = requestToken;
+document.getElementById("syncBtn").onclick = syncNow;
+document.getElementById("settingsBtn").onclick = openSettings;
+document.getElementById("settingsCancel").onclick = closeSettings;
+document.getElementById("settingsScrim").onclick = (e) => { if (e.target.id === "settingsScrim") closeSettings(); };
+document.getElementById("settingsSave").onclick = () => {
+  const cid = document.getElementById("clientIdInput").value.trim();
+  const cidChanged = cid !== (state.clientId || CONFIG.CLIENT_ID);
+  state.clientId = cid;
+  state.window = document.getElementById("windowInput").value;
+  state.query = document.getElementById("queryInput").value.trim() || DEFAULT_QUERY;
+  state.autoSync = document.getElementById("autoSyncInput").checked;
+  saveState(); closeSettings();
+  if (cidChanged) { tokenClient = null; accessToken = null; tokenExpiry = 0; connectedOnce = false; }
+  updateControls();
+  toast("Settings saved");
+};
+document.getElementById("resetBtn").onclick = () => {
+  if (confirm("Clear all tracked applications and settings from this browser?")) {
+    localStorage.removeItem(STORE_KEY);
+    state = loadState(); accessToken = null; tokenExpiry = 0; connectedOnce = false; tokenClient = null;
+    closeSettings(); render(); toast("Cleared");
+  }
+};
+
+document.getElementById("addBtn").onclick = () => document.getElementById("addScrim").classList.add("open");
+document.getElementById("addCancel").onclick = () => document.getElementById("addScrim").classList.remove("open");
+document.getElementById("addScrim").onclick = (e) => { if (e.target.id === "addScrim") e.currentTarget.classList.remove("open"); };
+document.getElementById("addSave").onclick = () => {
+  const company = document.getElementById("mCompany").value.trim();
+  const role = document.getElementById("mRole").value.trim();
+  const status = document.getElementById("mStatus").value;
+  if (!company) { toast("Company is required"); return; }
+  let key = groupKey(company, role); let k = key, i = 2;
+  while (state.groups[k]) k = key + "#" + (i++);
+  state.groups[k] = { company, role, emails: [], manual: true, status, override: null, addedAt: Date.now() };
+  delete state.dismissed[k];
+  saveState();
+  document.getElementById("mCompany").value = ""; document.getElementById("mRole").value = "";
+  document.getElementById("addScrim").classList.remove("open");
+  render(); toast("Added");
+};
+
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { closeSettings(); document.getElementById("addScrim").classList.remove("open"); }
+});
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+render();
+updateControls();
+
+// Auto-sync every 5 minutes while the tab is open (respects the Settings toggle).
+setInterval(autoTick, AUTO_SYNC_MS);
+// Keep the "synced 3m ago" label honest without a full re-render.
+setInterval(updateSyncedLabel, 60 * 1000);
+// When you switch back to this tab, catch up if it's been a while.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && state.autoSync && !isSyncing
+      && tokenValid() && Date.now() - state.lastSync > AUTO_SYNC_MS) {
+    runSync();
+  }
+});
+// If GIS loads after we boot, we lazily init the token client on first click.
+</script>
+</body>
+</html>
